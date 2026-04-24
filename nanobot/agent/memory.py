@@ -516,6 +516,18 @@ class Consolidator:
         except Exception:
             return truncate_text(text, budget * 4)
 
+    @staticmethod
+    def _prune_tool_results(messages: list[dict], max_chars: int = 2000) -> list[dict]:
+        """Truncate verbose tool result content before consolidation."""
+        pruned: list[dict] = []
+        for msg in messages:
+            if msg.get("role") == "tool":
+                content = msg.get("content")
+                if isinstance(content, str) and len(content) > max_chars:
+                    msg = {**msg, "content": content[:max_chars] + "\n...[truncated]"}
+            pruned.append(msg)
+        return pruned
+
     async def archive(self, messages: list[dict]) -> str | None:
         """Summarize messages via LLM and append to history.jsonl.
 
@@ -524,7 +536,7 @@ class Consolidator:
         if not messages:
             return None
         try:
-            formatted = MemoryStore._format_messages(messages)
+            formatted = MemoryStore._format_messages(self._prune_tool_results(messages))
             formatted = self._truncate_to_token_budget(formatted)
             response = await self.provider.chat_with_retry(
                 model=self.model,
