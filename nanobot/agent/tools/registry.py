@@ -1,5 +1,6 @@
 """Tool registry for dynamic tool management."""
 
+import json
 from typing import Any
 
 from nanobot.agent.tools.base import Tool
@@ -123,3 +124,18 @@ class ToolRegistry:
 
     def __contains__(self, name: str) -> bool:
         return name in self._tools
+
+
+def tool_error(message: str, **extra) -> str:
+    """Return JSON error string for tool handlers."""
+    result = {"error": str(message)}
+    if extra:
+        result.update(extra)
+    return json.dumps(result, ensure_ascii=False)
+
+
+def tool_result(data=None, **kwargs) -> str:
+    """Return JSON result string for tool handlers."""
+    if data is not None:
+        return json.dumps(data, ensure_ascii=False)
+    return json.dumps(kwargs, ensure_ascii=False)
